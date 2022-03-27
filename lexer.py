@@ -48,9 +48,15 @@ class Lexer:
                         raise Exception('non terminated string quote')
                     yield Token('STR', line[begin:i])
                     i += 1
-                elif ch in single_char_operators:
-                    if ch == ':':
-                        pass
+                elif ch in single_char_operators.keys():
+                    yield single_char_operators[ch]
+                elif ch in double_char_operators.keys():
+                    if i < n and line[i] == '=':
+                        word = line[i - 1:i + 1]
+                        yield double_char_operators[word]
+                        i += 1
+                    else:
+                        yield double_char_operators[ch]
 
         return EOF
 
@@ -65,3 +71,9 @@ def is_digit(ch):
 
 def is_name_start(ch):
     return ch == '_' or ('a' <= ch <= 'z') or ('A' <= ch <= 'Z')
+
+
+if __name__ == '__main__':
+    lexer = Lexer('demo.mini')
+    for token in lexer.next_token():
+        print(token)
