@@ -3,6 +3,12 @@ class Token:
         self.type = _type
         self.value = _val
 
+    def __eq__(self, other):
+        return self.type == other.type
+
+    def __hash__(self):
+        return hash(self.type)
+
     def __str__(self):
         return 'type:{}, value:{}'.format(self.type, self.value)
 
@@ -39,6 +45,11 @@ RETURN = Token('RETURN')
 AND = Token('AND')
 NOT = Token('NOT')
 OR = Token('OR')
+
+INT = Token('INT')
+DOUBLE = Token('DOUBLE')
+STR = Token('STR')
+NAME = Token('NAME')
 
 EOF = Token('EOF', -1)
 EOL = Token('EOL', '\n')

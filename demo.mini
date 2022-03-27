@@ -14,3 +14,15 @@ func test_func(x, y) {
 f = test_func(1, 2)
 print(f)
 
+arr = [1, 2, 3, 4, 5]
+for k, v in arr {
+    print(k, v)
+}
+
+arr[0] = 'abc'
+print(a[0])
+
+m = {'1': 2, '3': 4}
+print(m['1'])
+m['1'] = 5
+print(m['1'])
