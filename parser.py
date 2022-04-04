@@ -1,10 +1,11 @@
 from token import *
 from ast import *
+from lexer import Lexer
 
 
 class Parser:
-    def __init__(self, lexer):
-        self.lexer = lexer
+    def __init__(self, lex):
+        self.lexer = lex
         self.current_token = next(self.lexer.next_token())
 
     def next(self):
@@ -49,7 +50,7 @@ class Parser:
         elif tok == RETURN:
             return self.return_()
         elif tok == FUNC:
-            pass
+            return self.func_()
 
         expr = self.expression()
         if self.current_token == ASSIGN:
@@ -102,11 +103,156 @@ class Parser:
         self.expect(RETURN)
         return Return(self.expression())
 
+    # func = FUNC NAME params block
+    def func_(self):
+        self.expect(FUNC)
+        name = self.current_token.value
+        self.next()
+        params = self.params()
+        body = self.block()
+        return FuncDefinition(name, params, body)
+
+    # params = LPAREN RPAREN |
+    #          LPAREN NAME (COMMA NAME)* RPAREN
+    def params(self):
+        self.expect(LPAREN)
+        params = []
+        while self.current_token != RPAREN and self.current_token != EOL:
+            param = self.current_token.value
+            self.expect(NAME)
+            params.append(param)
+            if self.current_token == COMMA:
+                self.next()
+        self.expect(RPAREN)
+        return params
+
+    # BLOCK = LBRACE statements* RBRACE
     def block(self):
         self.expect(LBRACE)
         body = self.statements(RBRACE)
         self.expect(RBRACE)
         return body
 
+    def binary(self, parse_def, *opers):
+        left_expr = parse_def()
+        while self.match(*opers):
+            tok = self.current_token
+            self.next()
+            right = parse_def()
+            left_expr = Binary(left_expr, tok, right)
+        return left_expr
+
     def expression(self):
-        pass
+        return self.binary(self.and_, OR)
+
+    def and_(self):
+        return self.binary(self.not_, AND)
+
+    def not_(self):
+        if self.current_token != NOT:
+            self.next()
+            operand = self.not_()
+            return Unary(NOT, operand)
+
+        return self.equality()
+
+    def equality(self):
+        return self.binary(self.comparison, EQUAL, NOTEQUAL)
+
+    def comparison(self):
+        return self.binary(self.addition, LT, LTE, GT, GTE, IN)
+
+    def addition(self):
+        return self.binary(self.multiply, PLUS, MINUS)
+
+    def multiply(self):
+        return self.binary(self.negative, TIMES, DIVIDE, MODULO)
+
+    def negative(self):
+        if self.current_token == MINUS:
+            self.next()
+            operand = self.negative()
+            return Unary(MINUS, operand)
+        return self.call()
+
+    def call(self):
+        expr = self.primary()
+        while self.match(LPAREN, LBRACKET, DOT):
+            if self.current_token == LPAREN:
+                self.next()
+                args = []
+                while self.current_token != RPAREN and self.current_token != EOL:
+                    arg = self.expression()
+                    args.append(arg)
+                    if self.current_token == COMMA:
+                        self.next()
+                self.expect(RPAREN)
+                expr = Call(expr, args)
+            elif self.current_token == LBRACKET:
+                self.next()
+                subscript = self.expression()
+                self.expect(RBRACKET)
+                expr = Subscript(expr, subscript)
+            elif self.current_token == DOT:
+                self.next()
+                subscript = Literal(self.current_token.value)
+                self.expect(NAME)
+                expr = Subscript(expr, subscript)
+            return expr
+
+    def primary(self):
+        tok, value = self.current_token, self.current_token.value
+        if tok == NAME:
+            self.next()
+            return Variable(value)
+        if tok == INT:
+            self.next()
+            return Literal(int(value))
+        if tok == DOUBLE:
+            self.next()
+            return Literal(float(value))
+        if tok == STR:
+            self.next()
+            return Literal(str(value))
+        if tok == LBRACKET:
+            return self.list_()
+        if tok == LPAREN:
+            self.next()
+            expr = self.expression()
+            self.expect(RPAREN)
+            return expr
+
+        raise Exception('error primary', tok, value)
+
+    def list_(self):
+        self.expect(LBRACKET)
+        values = []
+        while self.current_token != RBRACKET and self.current_token != EOL:
+            value = self.expression()
+            values.append(value)
+            if self.current_token == COMMA:
+                self.next()
+
+        self.expect(RBRACKET)
+        return List(values)
+
+    def map_(self):
+        self.expect(LBRACE)
+        items = []
+        while self.current_token != RBRACE and self.current_token != EOL:
+            key = self.expression()
+            self.expect(COLON)
+            value = self.expression()
+            items.append(MapItem(key, value))
+            if self.current_token == COMMA:
+                self.next()
+
+        self.expect(RBRACE)
+        return Map(items)
+
+
+if __name__ == '__main__:':
+    lexer = Lexer('demo.mini')
+    parser = Parser(lexer)
+    program = parser.program()
+    print(program)

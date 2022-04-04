@@ -58,6 +58,8 @@ class Lexer:
                     else:
                         yield double_char_operators[ch]
 
+            yield EOL
+
         return EOF
 
 
