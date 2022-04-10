@@ -1,16 +1,17 @@
-from token import *
-from ast import *
+from token_ import *
+from ast_ import *
 from lexer import Lexer
 
 
 class Parser:
     def __init__(self, lex):
         self.lexer = lex
-        self.current_token = next(self.lexer.next_token())
+        self.next_token = self.lexer.next_token()
+        self.current_token = next(self.next_token)
 
     def next(self):
         try:
-            self.current_token = next(self.lexer.next_token())
+            self.current_token = next(self.next_token)
         except:
             self.current_token = EOF
 
@@ -251,7 +252,7 @@ class Parser:
         return Map(items)
 
 
-if __name__ == '__main__:':
+if __name__ == '__main__':
     lexer = Lexer('demo.mini')
     parser = Parser(lexer)
     program = parser.program()
