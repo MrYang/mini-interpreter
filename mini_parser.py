@@ -1,5 +1,5 @@
-from token_ import *
-from ast_ import *
+from token import *
+from ast import *
 from lexer import Lexer
 
 
@@ -35,7 +35,7 @@ class Parser:
         while self.current_token != end:
             stmt = self.statement()
             statements.append(stmt)
-        return statements
+        return Block(statements)
 
     # statement = if | while | for | return | func | assign | expression
     # assign = NAME ASSIGN expression
@@ -118,7 +118,7 @@ class Parser:
     def params(self):
         self.expect(LPAREN)
         params = []
-        while self.current_token != RPAREN and self.current_token != EOL:
+        while self.current_token != RPAREN and self.current_token != EOF:
             param = self.current_token.value
             self.expect(NAME)
             params.append(param)
@@ -150,7 +150,7 @@ class Parser:
         return self.binary(self.not_, AND)
 
     def not_(self):
-        if self.current_token != NOT:
+        if self.current_token == NOT:
             self.next()
             operand = self.not_()
             return Unary(NOT, operand)
@@ -182,7 +182,7 @@ class Parser:
             if self.current_token == LPAREN:
                 self.next()
                 args = []
-                while self.current_token != RPAREN and self.current_token != EOL:
+                while self.current_token != RPAREN and self.current_token != EOF:
                     arg = self.expression()
                     args.append(arg)
                     if self.current_token == COMMA:
@@ -199,7 +199,8 @@ class Parser:
                 subscript = Literal(self.current_token.value)
                 self.expect(NAME)
                 expr = Subscript(expr, subscript)
-            return expr
+
+        return expr
 
     def primary(self):
         tok, value = self.current_token, self.current_token.value
@@ -217,18 +218,18 @@ class Parser:
             return Literal(str(value))
         if tok == LBRACKET:
             return self.list_()
+        if tok == LBRACE:
+            return self.map_()
         if tok == LPAREN:
             self.next()
             expr = self.expression()
             self.expect(RPAREN)
             return expr
 
-        raise Exception('error primary', tok, value)
-
     def list_(self):
         self.expect(LBRACKET)
         values = []
-        while self.current_token != RBRACKET and self.current_token != EOL:
+        while self.current_token != RBRACKET and self.current_token != EOF:
             value = self.expression()
             values.append(value)
             if self.current_token == COMMA:
@@ -240,7 +241,7 @@ class Parser:
     def map_(self):
         self.expect(LBRACE)
         items = []
-        while self.current_token != RBRACE and self.current_token != EOL:
+        while self.current_token != RBRACE and self.current_token != EOF:
             key = self.expression()
             self.expect(COLON)
             value = self.expression()

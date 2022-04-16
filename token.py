@@ -52,7 +52,6 @@ STR = Token('STR')
 NAME = Token('NAME')
 
 EOF = Token('EOF', -1)
-EOL = Token('EOL', '\n')
 
 single_char_operators = {
     ':': COLON,

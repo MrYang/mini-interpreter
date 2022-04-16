@@ -1,7 +1,8 @@
-from ast_ import *
-from token_ import *
+from ast import *
+from token import *
 from lexer import Lexer
-from parser_ import Parser
+from mini_parser import Parser
+from functions import call, builtin_func
 
 binary_func = {
     PLUS: lambda a, b: a + b,
@@ -28,6 +29,7 @@ class Interpreter:
         self.parser = _parser
         self.vars = {}
         self.nest_vars = {}
+        self.assign_builtin_func()
 
     def assign(self, key, value):
         self.vars[key] = value
@@ -38,6 +40,10 @@ class Interpreter:
     def remove_nest(self, key):
         del self.nest_vars[key]
 
+    def assign_builtin_func(self):
+        for func in builtin_func:
+            self.assign(func, builtin_func[func])
+
     def lookup(self, key):
         if key in self.nest_vars:
             return self.nest_vars[key]
@@ -47,7 +53,7 @@ class Interpreter:
 
     def execute(self):
         program = self.parser.program()
-        self.execute_block(program.block())
+        self.execute_block(program.block)
 
     def execute_block(self, block):
         result = None
@@ -123,6 +129,11 @@ class Interpreter:
             args = []
             for arg in expression.args:
                 args.append(self.eval(arg))
+
+            if type(func) == FuncDefinition:
+                return call(self, func.params, args, func.body)
+
+            return func(self, args)
         elif expr_type == Subscript:
             container = self.eval(expression.container)
             subscript = self.eval(expression.subscript)
@@ -138,9 +149,13 @@ class Interpreter:
             return arr
         elif expr_type == Map:
             m = {}
-            for item in expression.items():
-                m[item.key] = self.eval(item.value)
+            for item in expression.items:
+                m[self.eval(item.key)] = self.eval(item.value)
             return m
+        elif expr_type == Subscript:
+            container = self.eval(expression.container)
+            subscript = self.eval(expression.subscript)
+            return container[subscript]
 
 
 if __name__ == '__main__':

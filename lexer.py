@@ -1,4 +1,4 @@
-from token_ import *
+from token import *
 
 
 class Lexer:
@@ -58,9 +58,7 @@ class Lexer:
                     else:
                         yield double_char_operators[ch]
 
-            yield EOL
-
-        return EOF
+        yield EOF
 
 
 def is_whitespace(ch):
