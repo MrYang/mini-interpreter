@@ -1,8 +1,8 @@
 from ast import *
-from token import *
-from lexer import Lexer
-from mini_parser import Parser
 from functions import call, builtin_func
+from lexer import Lexer
+from parser_ import Parser
+from token_ import *
 
 binary_func = {
     PLUS: lambda a, b: a + b,

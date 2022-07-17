@@ -1,6 +1,6 @@
-from token import *
 from ast import *
 from lexer import Lexer
+from token_ import *
 
 
 class Parser:
